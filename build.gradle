@@ -1,10 +1,10 @@
 plugins {
-    id 'net.minecraftforge.gradleutils'
+    id 'net.neoForged.gradleutils'
     id 'java-library'
     id 'maven-publish'
 }
 
-group = 'net.minecraftforge'
+group = 'net.neoforged'
 version = gradleutils.getTagOffsetVersion()
 println('Version: ' + version)
 
@@ -13,7 +13,7 @@ subprojects { subproject ->
     subproject.apply plugin: 'java-library'
     subproject.apply plugin: 'maven-publish'
 
-    subproject.group = 'net.minecraftforge'
+    subproject.group = 'net.neoforged'
     subproject.version = rootProject.version
 
     sourceSets {
@@ -29,7 +29,7 @@ subprojects { subproject ->
         mavenCentral()
         maven {
             name 'Forge'
-            url 'https://maven.minecraftforge.net/'
+            url 'https://maven.neoforged.net/'
         }
     }
 
@@ -65,11 +65,11 @@ subprojects { subproject ->
             attributes([
                     'Maven-Artifact'          : "${project.group}:${project.archivesBaseName}:${project.version}",
                     "Specification-Title"     : project.name,
-                    "Specification-Vendor"    : "Minecraft Forge",
+                    "Specification-Vendor"    : "NeoForged",
                     "Specification-Version"   : "1", // We are version 1 of ourselves
                     "Implementation-Title"    : project.name,
                     "Implementation-Version"  : "${project.version}",
-                    "Implementation-Vendor"   : "Minecraft Forge",
+                    "Implementation-Vendor"   : "NeoForged",
                     "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
                     "Automatic-Module-Name"   : project.name,
             ])
@@ -84,23 +84,23 @@ subprojects { subproject ->
                 pom {
                     name = project.name
                     description = 'Jar in Jar Utilities including the required NIO FileSystems. SubSystem: ' + project.name
-                    url = 'https://github.com/MinecraftForge/JarJar'
+                    url = 'https://github.com/NeoForged/JarJar'
 
                     scm {
-                        url = 'https://github.com/MinecraftForge/JarJar'
-                        connection = 'scm:git:git://github.com/MinecraftForge/JarJar.git'
-                        developerConnection = 'scm:git:git@github.com:MinecraftForge/JarJar.git'
+                        url = 'https://github.com/NeoForged/JarJar'
+                        connection = 'scm:git:git://github.com/NeoForged/JarJar.git'
+                        developerConnection = 'scm:git:git@github.com:NeoForged/JarJar.git'
                     }
 
                     issueManagement {
                         system = 'github'
-                        url = 'https://github.com/MinecraftForge/JarJar/issues'
+                        url = 'https://github.com/NeoForged/JarJar/issues'
                     }
 
                     licenses {
                         license {
                             name = 'LGPL 2.1'
-                            url = 'https://github.com/MinecraftForge/JarJar/blob/main/LICENSE'
+                            url = 'https://github.com/NeoForged/JarJar/blob/main/LICENSE'
                             distribution = 'repo'
                         }
                     }

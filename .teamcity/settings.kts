@@ -35,7 +35,7 @@ project {
         text("git_main_branch", "main", label = "Git Main Branch", description = "The git main or default branch to use in VCS operations.", display = ParameterDisplay.HIDDEN, allowEmpty = false)
         text("github_repository_name", "JarJar", label = "The github repository name. Used to connect to it in VCS Roots.", description = "This is the repository slug on github. So for example `JarJar` or `MinecraftForge`. It is interpolated into the global VCS Roots.", display = ParameterDisplay.HIDDEN, allowEmpty = false)
         text("env.PUBLISHED_JAVA_ARTIFACT_ID", "JarJar", label = "Published artifact id", description = "The maven coordinate artifact id that has been published by this build. Can not be empty.", allowEmpty = false)
-        text("env.PUBLISHED_JAVA_GROUP", "net.minecraftforge", label = "Published group", description = "The maven coordinate group that has been published by this build. Can not be empty.", allowEmpty = false)
+        text("env.PUBLISHED_JAVA_GROUP", "net.neoforged", label = "Published group", description = "The maven coordinate group that has been published by this build. Can not be empty.", allowEmpty = false)
         text("docker_gradle_version", "7.4.2")
         text("docker_jdk_version", "17")
     }
@@ -43,8 +43,8 @@ project {
     features {
         githubIssues {
             id = "JarJar__IssueTracker"
-            displayName = "MinecraftForge/JarJar"
-            repositoryURL = "https://github.com/MinecraftForge/JarJar"
+            displayName = "neoforged/JarJar"
+            repositoryURL = "https://github.com/neoforged/JarJar"
         }
     }
 }
