@@ -1,5 +1,5 @@
 plugins {
-    id 'net.neoForged.gradleutils'
+    id 'net.neoforged.gradleutils'
     id 'java-library'
     id 'maven-publish'
 }
