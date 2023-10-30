@@ -8,10 +8,16 @@ group = 'net.neoforged'
 version = gradleutils.getTagOffsetVersion()
 println('Version: ' + version)
 
+changelog {
+    fromTag '0.3'
+}
+changelog.disableAutomaticPublicationRegistration()
+
 subprojects { subproject ->
 
     subproject.apply plugin: 'java-library'
     subproject.apply plugin: 'maven-publish'
+    subproject.apply plugin: 'signing'
 
     subproject.group = 'net.neoforged'
     subproject.version = rootProject.version
@@ -70,7 +76,6 @@ subprojects { subproject ->
                     "Implementation-Title"    : project.name,
                     "Implementation-Version"  : "${project.version}",
                     "Implementation-Vendor"   : "NeoForged",
-                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
                     "Automatic-Module-Name"   : project.name,
             ])
         }
@@ -104,6 +109,15 @@ subprojects { subproject ->
                             distribution = 'repo'
                         }
                     }
+
+                    developers {
+                        developer {
+                            id = 'neoforged'
+                            name = 'NeoForged'
+                            email = 'contact@neoforged.net'
+                            url = 'https://github.com/NeoForged/'
+                        }
+                    }
                 }
             }
         }
@@ -112,8 +126,12 @@ subprojects { subproject ->
         }
     }
 
-}
-
-changelog {
-    fromTag '0.3'
+    if (System.getenv('GPG_PRIVATE_KEY')) {
+        signing {
+            final signingKey = System.getenv('GPG_PRIVATE_KEY') ?: ''
+            final signingPassword = System.getenv('GPG_KEY_PASSWORD') ?: ''
+            useInMemoryPgpKeys(signingKey, signingPassword)
+            sign publishing.publications.mavenJava
+        }
+    }
 }
