@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class JarSelector {
     private static final Logger LOGGER = LoggerFactory.getLogger(JarSelector.class);
@@ -24,6 +25,18 @@ public final class JarSelector {
     }
 
     public static <T, E extends Throwable> List<T> detectAndSelect(
+            final List<T> source,
+            final BiFunction<T, Path, Optional<InputStream>> resourceReader,
+            final BiFunction<T, Path, Optional<T>> sourceProducer,
+            final Function<T, String> identificationProducer,
+            final Function<Collection<ResolutionFailureInformation<T>>, E> failureExceptionProducer
+    ) throws E {
+        return detectAndSelectWithMetadata(source, resourceReader, sourceProducer, identificationProducer, failureExceptionProducer).stream()
+                .map(JarSelectionResult::getResult)
+                .collect(Collectors.toList());
+    }
+
+    public static <T, E extends Throwable> List<JarSelectionResult<T>> detectAndSelectWithMetadata(
             final List<T> source,
             final BiFunction<T, Path, Optional<InputStream>> resourceReader,
             final BiFunction<T, Path, Optional<T>> sourceProducer,
@@ -61,21 +74,22 @@ public final class JarSelector {
             throw exception;
         }
 
-        final List<T> selectedJars = select.stream()
+        final List<JarSelectionResult<T>> selectedJars = select.stream()
                 .map(SelectionResult::selected)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(detectedJarsBySource::containsKey)
                 .map(selectedJarMetadata -> {
                     final Collection<T> sourceOfJar = detectedJarsBySource.get(selectedJarMetadata);
-                    return sourceProducer.apply(sourceOfJar.iterator().next(), Paths.get(selectedJarMetadata.path()));
+                    return sourceProducer.apply(sourceOfJar.iterator().next(), Paths.get(selectedJarMetadata.path()))
+                            .map(result -> new JarSelectionResult<>(result, selectedJarMetadata));
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        final Map<String, T> selectedJarsByIdentification = selectedJars.stream()
-                .collect(Collectors.toMap(identificationProducer, Function.identity(), (t, t2) -> {
+        final Map<String, JarSelectionResult<T>> selectedJarsByIdentification = selectedJars.stream()
+                .collect(Collectors.toMap(res -> identificationProducer.apply(res.getResult()), Function.identity(), (t, t2) -> {
                     LOGGER.warn("Attempted to select two dependency jars from JarJar which have the same identification: {} and {}. Using {}", t, t2, t);
                     return t;
                 }));

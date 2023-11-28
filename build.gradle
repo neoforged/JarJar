@@ -2,25 +2,29 @@ plugins {
     id 'net.neoforged.gradleutils'
     id 'java-library'
     id 'maven-publish'
+    id 'signing'
 }
 
 group = 'net.neoforged'
-version = gradleutils.getTagOffsetVersion()
+version = gradleutils.version
 println('Version: ' + version)
 
 changelog {
-    fromTag '0.3'
+    from '0.3'
+    disableAutomaticPublicationRegistration()
 }
-changelog.disableAutomaticPublicationRegistration()
 
-subprojects { subproject ->
+subprojects { Project subproject ->
 
     subproject.apply plugin: 'java-library'
     subproject.apply plugin: 'maven-publish'
-    subproject.apply plugin: 'signing'
 
     subproject.group = 'net.neoforged'
     subproject.version = rootProject.version
+
+    gradleutils {
+        setupSigning(project: subproject, signAllPublications: true)
+    }
 
     sourceSets {
         test {
@@ -41,16 +45,9 @@ subprojects { subproject ->
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(8)
         }
         withSourcesJar()
-    }
-
-    project.tasks.withType(JavaCompile).all {
-        JavaToolchainService service = getProject().getExtensions().getByType(JavaToolchainService.class);
-        Provider<JavaCompiler> compiler = service.compilerFor(s -> s.getLanguageVersion().set(JavaLanguageVersion.of(8)));
-
-        it.javaCompiler = compiler;
     }
 
     dependencies {
@@ -122,16 +119,7 @@ subprojects { subproject ->
             }
         }
         repositories {
-            maven gradleutils.getPublishingForgeMaven()
-        }
-    }
-
-    if (System.getenv('GPG_PRIVATE_KEY')) {
-        signing {
-            final signingKey = System.getenv('GPG_PRIVATE_KEY') ?: ''
-            final signingPassword = System.getenv('GPG_KEY_PASSWORD') ?: ''
-            useInMemoryPgpKeys(signingKey, signingPassword)
-            sign publishing.publications.mavenJava
+            maven gradleutils.publishingMaven
         }
     }
 }
