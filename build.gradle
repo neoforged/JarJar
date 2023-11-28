@@ -6,6 +6,12 @@ plugins {
 }
 
 group = 'net.neoforged'
+gradleutils.version {
+    branches {
+        suffixBranch = true
+    }
+}
+
 version = gradleutils.version
 println('Version: ' + version)
 
