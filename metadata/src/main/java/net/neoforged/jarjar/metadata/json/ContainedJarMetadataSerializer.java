@@ -1,11 +1,14 @@
 package net.neoforged.jarjar.metadata.json;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.*;
 import net.neoforged.jarjar.metadata.ContainedJarIdentifier;
 import net.neoforged.jarjar.metadata.ContainedJarMetadata;
 import net.neoforged.jarjar.metadata.ContainedVersion;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.Map;
 
 public class ContainedJarMetadataSerializer implements JsonSerializer<ContainedJarMetadata>, JsonDeserializer<ContainedJarMetadata>
 {
@@ -23,7 +26,12 @@ public class ContainedJarMetadataSerializer implements JsonSerializer<ContainedJ
         if (jsonObject.has("isObfuscated"))
             isObfuscated = jsonObject.get("isObfuscated").getAsBoolean();
 
-        return new ContainedJarMetadata(containedJarIdentifier, version, path, isObfuscated);
+        Map<String, ?> customMetadata = Collections.emptyMap();
+        if (jsonObject.has("customMetadata")) {
+            context.deserialize(jsonObject.get("customMetadata"), new TypeToken<Map<String, ?>>() {}.getType());
+        }
+
+        return new ContainedJarMetadata(containedJarIdentifier, version, path, isObfuscated, customMetadata);
     }
 
     @Override
@@ -34,6 +42,7 @@ public class ContainedJarMetadataSerializer implements JsonSerializer<ContainedJ
         jsonObject.add("version", context.serialize(src.version()));
         jsonObject.add("path", new JsonPrimitive(src.path()));
         jsonObject.add("isObfuscated", new JsonPrimitive(src.isObfuscated()));
+        jsonObject.add("customMetadata", context.serialize(src.getCustomMetadata()));
         return jsonObject;
     }
 }

@@ -146,8 +146,7 @@ public class JarSelectorTest {
                 new ContainedJarIdentifier(name, "artifact"),
                 new ContainedVersion(VersionRange.createFromVersionSpec(spec), new DefaultArtifactVersion(version)),
                 name,
-                false
-        );
+                false);
     }
 
     private final class SelectionSource {

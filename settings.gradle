@@ -1,11 +1,6 @@
 pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        maven { url = 'https://maven.neoforged.net/' }
-    }
-
     plugins {
-        id 'net.neoforged.gradleutils' version '2.0.+'
+        id 'net.neoforged.gradleutils' version '3.0.0-alpha.5'
     }
 }
 
