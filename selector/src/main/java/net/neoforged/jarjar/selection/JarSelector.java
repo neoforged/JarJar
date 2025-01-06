@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -23,8 +25,8 @@ public final class JarSelector {
 
     public static <T, E extends Throwable> List<T> detectAndSelect(
             final List<T> source,
-            final BiFunction<T, String, Optional<InputStream>> resourceReader,
-            final BiFunction<T, String, Optional<T>> sourceProducer,
+            final BiFunction<T, Path, Optional<InputStream>> resourceReader,
+            final BiFunction<T, Path, Optional<T>> sourceProducer,
             final Function<T, String> identificationProducer,
             final Function<Collection<ResolutionFailureInformation<T>>, E> failureExceptionProducer
     ) throws E {
@@ -66,7 +68,7 @@ public final class JarSelector {
                 .filter(detectedJarsBySource::containsKey)
                 .map(selectedJarMetadata -> {
                     final Collection<T> sourceOfJar = detectedJarsBySource.get(selectedJarMetadata);
-                    return sourceProducer.apply(sourceOfJar.iterator().next(), selectedJarMetadata.path());
+                    return sourceProducer.apply(sourceOfJar.iterator().next(), Paths.get(selectedJarMetadata.path()));
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -94,13 +96,14 @@ public final class JarSelector {
 
     private static <T> Set<DetectionResult<T>> detect(
             final List<T> source,
-            final BiFunction<T, String, Optional<InputStream>> resourceReader,
-            final BiFunction<T, String, Optional<T>> sourceProducer,
+            final BiFunction<T, Path, Optional<InputStream>> resourceReader,
+            final BiFunction<T, Path, Optional<T>> sourceProducer,
             final Function<T, String> identificationProducer) {
+        final Path metadataPath = Paths.get(Constants.CONTAINED_JARS_METADATA_PATH);
         final Map<T, Optional<InputStream>> metadataInputStreamsBySource = source.stream().collect(
                 Collectors.toMap(
                         Function.identity(),
-                        t -> resourceReader.apply(t, Constants.CONTAINED_JARS_METADATA_PATH)
+                        t -> resourceReader.apply(t, metadataPath)
                 )
         );
 
@@ -126,8 +129,8 @@ public final class JarSelector {
 
     private static <T> Set<DetectionResult<T>> recursivelyDetectContainedJars(
             final Map<T, Metadata> rootMetadataBySource,
-            final BiFunction<T, String, Optional<InputStream>> resourceReader,
-            final BiFunction<T, String, Optional<T>> sourceProducer,
+            final BiFunction<T, Path, Optional<InputStream>> resourceReader,
+            final BiFunction<T, Path, Optional<T>> sourceProducer,
             final Function<T, String> identificationProducer) {
         final Set<DetectionResult<T>> results = Sets.newHashSet();
         final Map<T, T> rootSourcesBySource = Maps.newHashMap();
@@ -138,7 +141,7 @@ public final class JarSelector {
                     .forEach(results::add);
 
             for (final ContainedJarMetadata jar : entry.getValue().jars()) {
-                final Optional<T> source = sourceProducer.apply(entry.getKey(), jar.path());
+                final Optional<T> source = sourceProducer.apply(entry.getKey(), Paths.get(jar.path()));
                 if (source.isPresent()) {
                     sourcesToProcess.add(source.get());
                     rootSourcesBySource.put(source.get(), entry.getKey());
@@ -151,7 +154,7 @@ public final class JarSelector {
         while (!sourcesToProcess.isEmpty()) {
             final T source = sourcesToProcess.remove();
             final T rootSource = rootSourcesBySource.get(source);
-            final Optional<InputStream> metadataInputStream = resourceReader.apply(source, Constants.CONTAINED_JARS_METADATA_PATH);
+            final Optional<InputStream> metadataInputStream = resourceReader.apply(source, Paths.get(Constants.CONTAINED_JARS_METADATA_PATH));
             if (metadataInputStream.isPresent()) {
                 final Optional<Metadata> metadata = MetadataIOHandler.fromStream(metadataInputStream.get());
                 if (metadata.isPresent()) {
@@ -159,7 +162,7 @@ public final class JarSelector {
                             .forEach(results::add);
 
                     for (final ContainedJarMetadata jar : metadata.get().jars()) {
-                        final Optional<T> sourceJar = sourceProducer.apply(source, jar.path());
+                        final Optional<T> sourceJar = sourceProducer.apply(source, Paths.get(jar.path()));
                         if (sourceJar.isPresent()) {
                             sourcesToProcess.add(sourceJar.get());
                             rootSourcesBySource.put(sourceJar.get(), rootSource);

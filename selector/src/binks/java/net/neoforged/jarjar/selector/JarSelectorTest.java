@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -165,16 +166,16 @@ public class JarSelectorTest {
             this.name = name;
         }
 
-        public Optional<InputStream> getResource(final String path) {
-            if (path.contains("metadata") && metadata != null) {
+        public Optional<InputStream> getResource(final Path path) {
+            if (path.toString().contains("metadata") && metadata != null) {
                 return Optional.of(MetadataIOHandler.toInputStream(metadata));
             }
 
             return Optional.empty();
         }
 
-        public Optional<SelectionSource> getInternal(final String path) {
-            if (internalSource != null && path.contains(internalSource.getName())) {
+        public Optional<SelectionSource> getInternal(final Path path) {
+            if (internalSource != null && path.toString().contains(internalSource.getName())) {
                 return Optional.of(internalSource);
             }
 
