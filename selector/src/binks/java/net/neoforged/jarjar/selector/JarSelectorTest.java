@@ -14,7 +14,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class JarSelectorTest {
 
@@ -130,6 +132,50 @@ public class JarSelectorTest {
         Assertions.assertEquals(2, selectedSources.size());
     }
 
+    @Test
+    public void doesSelectAllDifferentClassifiers() throws InvalidVersionSpecificationException {
+        final List<SelectionSource> sources = new ArrayList<>();
+        sources.add(createSource("outer_client_classifier", createArtifact("test.one", "artifact", "client", "[1.0.0,1.5.0)", "1.0.0", "test.one-client"), "test.one-client"));
+        sources.add(createSource("outer_server_classifier", createArtifact("test.one", "artifact", "server", "[2.0.0,)", "2.0.0", "test.one-server"), "test.one-server"));
+
+        final List<SelectionSource> selectedSources = JarSelector.detectAndSelect(
+                sources,
+                SelectionSource::getResource,
+                SelectionSource::getInternal,
+                SelectionSource::getName,
+                (Function<Collection<JarSelector.ResolutionFailureInformation<SelectionSource>>, IllegalStateException>) resolutionFailureInformations -> {
+                    throw new IllegalStateException("Failed");
+                }
+        );
+
+        Assertions.assertEquals(2, selectedSources.size());
+        final Set<String> selectedNames = selectedNames(selectedSources);
+        Assertions.assertTrue(selectedNames.contains("test.one-client"));
+        Assertions.assertTrue(selectedNames.contains("test.one-server"));
+    }
+
+    @Test
+    public void doesSelectClassifierAndUnclassifiedArtifactsSeparately() throws InvalidVersionSpecificationException {
+        final List<SelectionSource> sources = new ArrayList<>();
+        sources.add(createSource("outer_unclassified", createArtifact("test.one", "artifact", null, "[1.0.0,1.5.0)", "1.0.0", "test.one"), "test.one"));
+        sources.add(createSource("outer_client_classifier", createArtifact("test.one", "artifact", "client", "[2.0.0,)", "2.0.0", "test.one-client"), "test.one-client"));
+
+        final List<SelectionSource> selectedSources = JarSelector.detectAndSelect(
+                sources,
+                SelectionSource::getResource,
+                SelectionSource::getInternal,
+                SelectionSource::getName,
+                (Function<Collection<JarSelector.ResolutionFailureInformation<SelectionSource>>, IllegalStateException>) resolutionFailureInformations -> {
+                    throw new IllegalStateException("Failed");
+                }
+        );
+
+        Assertions.assertEquals(2, selectedSources.size());
+        final Set<String> selectedNames = selectedNames(selectedSources);
+        Assertions.assertTrue(selectedNames.contains("test.one"));
+        Assertions.assertTrue(selectedNames.contains("test.one-client"));
+    }
+
     private SelectionSource createSource(final String outer_name, final ContainedJarMetadata artifact, final String inner_name) throws InvalidVersionSpecificationException {
         return new SelectionSource(
                 outer_name,
@@ -140,13 +186,22 @@ public class JarSelectorTest {
     private ContainedJarMetadata createArtifact(final String spec, final String version) throws InvalidVersionSpecificationException {
         return createArtifact("test.one", spec, version);
     }
+
     private ContainedJarMetadata createArtifact(final String name, final String spec, final String version) throws InvalidVersionSpecificationException {
+        return createArtifact(name, "artifact", null, spec, version, name);
+    }
+
+    private ContainedJarMetadata createArtifact(final String group, final String artifact, final String classifier, final String spec, final String version, final String path) throws InvalidVersionSpecificationException {
         return new ContainedJarMetadata(
-                new ContainedJarIdentifier(name, "artifact"),
+                new ContainedJarIdentifier(group, artifact, classifier),
                 new ContainedVersion(VersionRange.createFromVersionSpec(spec), new DefaultArtifactVersion(version)),
-                name,
+                path,
                 false
         );
+    }
+
+    private Set<String> selectedNames(final List<SelectionSource> selectedSources) {
+        return selectedSources.stream().map(SelectionSource::getName).collect(Collectors.toSet());
     }
 
     private final class SelectionSource {
