@@ -4,27 +4,27 @@ import com.google.gson.*;
 import net.neoforged.jarjar.metadata.ContainedJarIdentifier;
 
 import java.lang.reflect.Type;
+import java.util.Optional;
 
-public class ContainedJarIdentifierSerializer implements JsonSerializer<ContainedJarIdentifier>, JsonDeserializer<ContainedJarIdentifier>
-{
+public class ContainedJarIdentifierSerializer implements JsonSerializer<ContainedJarIdentifier>, JsonDeserializer<ContainedJarIdentifier> {
     @Override
-    public ContainedJarIdentifier deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException
-    {
+    public ContainedJarIdentifier deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException {
         if (!json.isJsonObject())
             throw new JsonParseException("Expected object");
 
         final JsonObject jsonObject = json.getAsJsonObject();
         final String group = jsonObject.get("group").getAsString();
         final String artifact = jsonObject.get("artifact").getAsString();
-        return new ContainedJarIdentifier(group, artifact);
+        final String classifier = Optional.ofNullable(jsonObject.get("classifier")).map(JsonElement::getAsString).orElse(null);
+        return new ContainedJarIdentifier(group, artifact, classifier);
     }
 
     @Override
-    public JsonElement serialize(final ContainedJarIdentifier src, final Type typeOfSrc, final JsonSerializationContext context)
-    {
+    public JsonElement serialize(final ContainedJarIdentifier src, final Type typeOfSrc, final JsonSerializationContext context) {
         final JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("group", src.group());
         jsonObject.addProperty("artifact", src.artifact());
+        src.classifier().ifPresent(classifier -> jsonObject.addProperty("classifier", classifier));
         return jsonObject;
     }
 }
