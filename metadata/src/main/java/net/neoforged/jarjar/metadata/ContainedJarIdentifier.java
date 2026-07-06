@@ -16,7 +16,12 @@ public final class ContainedJarIdentifier {
     public ContainedJarIdentifier(String group, String artifact, String classifier) {
         this.group = group;
         this.artifact = artifact;
-        this.classifier = classifier;
+        // prevent empty string
+        if (classifier == null || classifier.isEmpty()) {
+            this.classifier = null;
+        } else {
+            this.classifier = classifier;
+        }
     }
 
     public String group() {
