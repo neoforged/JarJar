@@ -18,7 +18,8 @@ import java.util.Optional;
 public class LayeredZipFileSystemProvider extends PathFileSystemProvider
 {
     public static final String SCHEME = "jij";
-    public static final String URI_SPLIT_REGEX = COMPONENT_SEPERATOR;
+    // A bare '~' can occur in filenames; only '~/' separates archive layers.
+    public static final String URI_SPLIT_REGEX = COMPONENT_SEPERATOR + "(?=/)";
 
 
     @Override
@@ -35,7 +36,7 @@ public class LayeredZipFileSystemProvider extends PathFileSystemProvider
         FileSystem workingSystem = FileSystems.getDefault(); //Grab the normal disk FS.
         String keyPrefix = "";
 
-        if (sections.length > 1)
+        if (sections.length > 1 && !env.containsKey("packagePath"))
         {
             final AdaptedURIWithPrefixSelection adaptedURI = adaptUriSections(sections);
             keyPrefix = adaptedURI.getPrefix();
@@ -103,7 +104,12 @@ public class LayeredZipFileSystemProvider extends PathFileSystemProvider
     @Override
     public Path getPath(final URI uri)
     {
-        final String[] sections = uri.getRawSchemeSpecificPart().split("~");
+        // Registered URIs are opaque keys; a '~' in the key is not an archive boundary.
+        final Optional<FileSystem> existing = getFileSystemFromKey(makeKey(uri));
+        if (existing.isPresent())
+            return existing.get().getPath("/");
+
+        final String[] sections = uri.getRawSchemeSpecificPart().split(URI_SPLIT_REGEX);
         if (sections.length == 1)
             return super.getPath(uri);
 
@@ -125,7 +131,11 @@ public class LayeredZipFileSystemProvider extends PathFileSystemProvider
     @Override
     public FileSystem getFileSystem(final URI uri)
     {
-        final String[] sections = uri.getRawSchemeSpecificPart().split("~");
+        final Optional<FileSystem> existing = getFileSystemFromKey(makeKey(uri));
+        if (existing.isPresent())
+            return existing.get();
+
+        final String[] sections = uri.getRawSchemeSpecificPart().split(URI_SPLIT_REGEX);
         if (sections.length == 1)
         {
             return super.getFileSystem(uri);
